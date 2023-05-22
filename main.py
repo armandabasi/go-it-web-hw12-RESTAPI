@@ -4,11 +4,20 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from starlette.middleware.cors import CORSMiddleware
 
 from src.database.db import get_db
 from src.routes import clients, auth
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")

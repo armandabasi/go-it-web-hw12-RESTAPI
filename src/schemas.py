@@ -25,6 +25,7 @@ class ClientResponse(BaseModel):
 class BirthdayResponse(BaseModel):
     firstname: str
     lastname: str
+    birthday: str
     email: EmailStr
 
     class Config:

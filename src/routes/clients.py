@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.database.db import get_db
 from src.database.models import Client, User, Role
-from src.schemas import ClientResponse, ClientModel
+from src.schemas import ClientResponse, ClientModel, BirthdayResponse
 from src.repository import clients as repository_clients
 from src.services.auth import auth_service
 from src.services.roles import RolesAccess
@@ -25,7 +25,7 @@ async def get_clients(limit: int = Query(10, le=300), offset: int = 0, db: Sessi
     return users
 
 
-@router.get("/birthday/", response_model=List[ClientResponse], dependencies=[Depends(access_get)])
+@router.get("/birthday/", response_model=List[BirthdayResponse], dependencies=[Depends(access_get)])
 async def get_users_birthday(days: int = Query(7, le=365), db: Session = Depends(get_db),
                              _: User = Depends(auth_service.get_current_user)):
     users = await repository_clients.get_birthday(days, db)
