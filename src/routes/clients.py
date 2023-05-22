@@ -4,22 +4,28 @@ from fastapi import APIRouter, HTTPException, status, Path, Query, Depends
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
-from src.database.models import Client, User
+from src.database.models import Client, User, Role
 from src.schemas import ClientResponse, ClientModel
 from src.repository import clients as repository_clients
 from src.services.auth import auth_service
+from src.services.roles import RolesAccess
 
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
+access_get = RolesAccess([Role.admin, Role.moderator, Role.user])
+access_create = RolesAccess([Role.admin, Role.moderator])
+access_update = RolesAccess([Role.admin, Role.moderator])
+access_delete = RolesAccess([Role.admin])
 
-@router.get("/", response_model=List[ClientResponse])
+
+@router.get("/", response_model=List[ClientResponse], dependencies=[Depends(access_get)])
 async def get_clients(limit: int = Query(10, le=300), offset: int = 0, db: Session = Depends(get_db),
                       _: User = Depends(auth_service.get_current_user)):
     users = await repository_clients.get_clients(limit, offset, db)
     return users
 
 
-@router.get("/birthday/", response_model=List[ClientResponse])
+@router.get("/birthday/", response_model=List[ClientResponse], dependencies=[Depends(access_get)])
 async def get_users_birthday(days: int = Query(7, le=365), db: Session = Depends(get_db),
                              _: User = Depends(auth_service.get_current_user)):
     users = await repository_clients.get_birthday(days, db)
@@ -28,7 +34,7 @@ async def get_users_birthday(days: int = Query(7, le=365), db: Session = Depends
     return users
 
 
-@router.get("/search/", response_model=List[ClientResponse])
+@router.get("/search/", response_model=List[ClientResponse], dependencies=[Depends(access_get)])
 async def search_clients(data: str, db: Session = Depends(get_db), _: User = Depends(auth_service.get_current_user)):
     clients = await repository_clients.search_clients(data, db)
     if clients is None:
@@ -36,7 +42,7 @@ async def search_clients(data: str, db: Session = Depends(get_db), _: User = Dep
     return clients
 
 
-@router.get("/{client_id}", response_model=ClientResponse)
+@router.get("/{client_id}", response_model=ClientResponse, dependencies=[Depends(access_get)])
 async def get_user(client_id: int = Path(ge=1), db: Session = Depends(get_db),
                    _: User = Depends(auth_service.get_current_user)):
     client = await repository_clients.get_client(client_id, db)
@@ -45,7 +51,8 @@ async def get_user(client_id: int = Path(ge=1), db: Session = Depends(get_db),
     return client
 
 
-@router.post("/", response_model=ClientResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ClientResponse, status_code=status.HTTP_201_CREATED,
+             dependencies=[Depends(access_create)])
 async def create_users(body: ClientModel, db: Session = Depends(get_db),
                        _: User = Depends(auth_service.get_current_user)):
     client = await repository_clients.get_client_by_email(body.email, db)
@@ -58,7 +65,7 @@ async def create_users(body: ClientModel, db: Session = Depends(get_db),
     return client
 
 
-@router.put("/{client_id}", response_model=ClientResponse)
+@router.put("/{client_id}", response_model=ClientResponse, dependencies=[Depends(access_update)])
 async def update_user(body: ClientModel, client_id: int = Path(ge=1), db: Session = Depends(get_db),
                       _: User = Depends(auth_service.get_current_user)):
     client = await repository_clients.update_client(body, client_id, db)
@@ -67,7 +74,7 @@ async def update_user(body: ClientModel, client_id: int = Path(ge=1), db: Sessio
     return client
 
 
-@router.delete("/{client_id}", response_model=ClientResponse)
+@router.delete("/{client_id}", response_model=ClientResponse, dependencies=[Depends(access_delete)])
 async def remove_user(client_id: int = Path(ge=1), db: Session = Depends(get_db),
                       _: User = Depends(auth_service.get_current_user)):
     client = await repository_clients.remove_client(client_id, db)

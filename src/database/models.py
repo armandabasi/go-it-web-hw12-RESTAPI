@@ -7,6 +7,12 @@ from fastapi import HTTPException, status
 Base = declarative_base()
 
 
+class Role(enum.Enum):
+    admin: str = 'admin'
+    moderator: str = 'moderator'
+    user: str = 'user'
+
+
 class Client(Base):
     __tablename__ = "clients"
 
@@ -59,4 +65,4 @@ class User(Base):
     password = Column(String(255), nullable=False)
     avatar = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
-
+    role = Column('role', Enum(Role), default=Role.user)
