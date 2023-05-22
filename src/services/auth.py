@@ -79,5 +79,15 @@ class Auth:
             raise credentials_exception
         return user
 
+    async def decode_access_token(self, access_token: str):
+        try:
+            payload = jwt.decode(access_token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+            if payload['scope'] == 'access_token':
+                email = payload['sub']
+                return email
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid scope for token')
+        except JWTError:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate credentials')
+
 
 auth_service = Auth()
